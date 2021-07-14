@@ -6,6 +6,7 @@ use HTTP::Headers;
 use LWP::UserAgent;
 use URI::Split qw(uri_split);
 use JSON::PP;
+use Data::Dumper;
 
 $JSON::PP::true = 1;
 $JSON::PP::false = 0;
@@ -16,81 +17,55 @@ sub new {
     my $class = shift;
     my %param = @_;
 
-    my $self = bless {}, $class;
-    
-    eval {
-        $self->{helper} = Helper->new(
-            region => _valid_regex($param{region}, 'region', 'jp|eu|na'),
-            public_key_id => _valid_regex($param{public_key_id}, 'public_key_id', '^[0-9a-zA-Z]+$'),
-            private_key_file => _valid_regex($param{private_key}, 'private_key', '.*\.pem'),
-            environment => $param{sandbox} ? 'sandbox': 'live'
-        );
-    };
-    if($@) {
-        print "AmazonPayClient exception occur: $@";
-    } else {
-        return $self;
-    }
+    my $self = bless {}, $class;    
+    $self->{helper} = Helper->new(
+        region => _valid_regex($param{region}, 'region', 'jp|eu|na'),
+        public_key_id => _valid_regex($param{public_key_id}, 'public_key_id', '^[0-9a-zA-Z]+$'),
+        private_key_file => _valid_regex($param{private_key}, 'private_key', '\.pem$'),
+        environment => $param{sandbox} ? 'sandbox': 'live'
+    );
+    return $self;
 }
 
 sub generate_button_signature {
     my ($self, $payload) = @_;
-    eval {
-        die "payload must be string" if(ref($payload) eq "HASH");
-    };
-    if($@) {
-        print "generate_button_signature exception occur: $@";
-    } else {
-        return $self->{helper}->sign($payload);
-    }
+    die "payload must be string" if(ref($payload) eq "HASH");
+    return $self->{helper}->sign($payload);
 }
 
 sub api_call {
     my $self = shift;
     my %param = @_;
+    
+    my $method_regex = join('|', @METHOD_TYPES);
+    chop($method_regex);
 
-    my $response = {
-        'status' => 400,
-        'body' => {
-            "reasonCode" => "InvalidRequest",
-        }
+    my ($url_fragment, $method, $payload, $headers, $query_params) = (
+        _valid_regex($param{url_fragment}, 'url_fragment', '^buyers|checkoutSessions|chargePermissions|charges|deliveryTrackers|refunds$'), 
+        _valid_regex($param{method}, 'method', "^$method_regex\$"), 
+        _valid_hash($param{payload}, 'payload'), 
+        _valid_hash($param{headers}, 'headers'), 
+        _valid_hash($param{query}, 'query')
+    );
+    my $query = $self->{helper}->to_query($query_params);
+    my $url = $self->{helper}->base_url() . $url_fragment . $query;
+
+    $method = $self->{helper}->http_method($method);
+    my $request_body = $payload ? encode_json($payload) : '';
+
+    my ($scheme, $hosts, $path, $urlquery, $frag) = uri_split($url);
+    my $signed_headers = $self->{helper}->signed_headers($method, $hosts, $path, $request_body, $headers, $query);
+
+    my $request = HTTP::Request->new($method => $url, HTTP::Headers->new(%{$signed_headers}));
+    $request->content($request_body) if($request_body);
+
+    my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
+    my $uares = $ua->request($request);
+
+    return {
+        'status' => $uares->code,
+        'body' => decode_json($uares->content)
     };
-
-    eval {
-        my $method_regex = join('|', @METHOD_TYPES);
-        chop($method_regex);
-
-        my ($url_fragment, $method, $payload, $headers, $query_params) = (
-            _valid_regex($param{url_fragment}, 'url_fragment', 'buyers|checkoutSessions|chargePermissions|charges|deliveryTrackers|refunds'), 
-            _valid_regex($param{method}, 'method', $method_regex), 
-            _valid_hash($param{payload}, 'payload'), 
-            _valid_hash($param{headers}, 'headers'), 
-            _valid_hash($param{query}, 'query')
-        );
-        my $query = $self->{helper}->to_query($query_params);
-        my $url = $self->{helper}->base_url() . $url_fragment . $query;
-
-        $method = $self->{helper}->http_method($method);
-        my $request_body = $payload ? encode_json($payload) : '';
-
-        my ($scheme, $hosts, $path, $urlquery, $frag) = uri_split($url);
-        my $signed_headers = $self->{helper}->signed_headers($method, $hosts, $path, $request_body, $headers, $query);
-
-        my $request = HTTP::Request->new($method => $url, HTTP::Headers->new(%{$signed_headers}));
-        $request->content($request_body) if($request_body);
-
-        my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
-        my $uares = $ua->request($request);
-
-        $response = {
-            'status' => $uares->code,
-            'body' => decode_json($uares->content)
-        };
-    };
-    if($@) {
-        print "api_call exception occur: $@";
-    }
-    return $response;
 }
 
 sub _valid_regex {
