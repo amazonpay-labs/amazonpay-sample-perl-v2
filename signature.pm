@@ -19,7 +19,7 @@ sub new {
 
     my $self = bless {}, $class;    
     $self->{helper} = Helper->new(
-        region => _valid_regex($param{region}, 'region', 'jp|eu|na'),
+        region => _valid_regex($param{region}, 'region', '^jp|eu|na$'),
         public_key_id => _valid_regex($param{public_key_id}, 'public_key_id', '^[0-9a-zA-Z]+$'),
         private_key_file => _valid_regex($param{private_key}, 'private_key', '\.pem$'),
         environment => $param{sandbox} ? 'sandbox': 'live'
