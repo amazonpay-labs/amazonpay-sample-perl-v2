@@ -1,4 +1,4 @@
-﻿package AmazonPayClient;
+package AmazonPayClient;
 use strict;
 use warnings;
 use HTTP::Request;
@@ -20,7 +20,7 @@ sub new {
     my $self = bless {}, $class;    
     $self->{helper} = Helper->new(
         region => _valid_regex($param{region}, 'region', '^jp|eu|na$'),
-        public_key_id => _valid_regex($param{public_key_id}, 'public_key_id', '^[0-9a-zA-Z]+$'),
+        public_key_id => _valid_regex($param{public_key_id}, 'public_key_id', '^[\-0-9a-zA-Z]+$'),
         private_key_file => _valid_regex($param{private_key}, 'private_key', '\.pem$'),
         environment => $param{sandbox} ? 'sandbox': 'live'
     );
@@ -38,7 +38,6 @@ sub api_call {
     my %param = @_;
     
     my $method_regex = join('|', @METHOD_TYPES);
-    chop($method_regex);
 
     my ($url_fragment, $method, $payload, $headers, $query_params) = (
         _valid_regex($param{url_fragment}, 'url_fragment', '^buyers|checkoutSessions|chargePermissions|charges|deliveryTrackers|refunds$'), 
