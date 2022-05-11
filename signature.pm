@@ -41,7 +41,7 @@ sub api_call {
     chop($method_regex);
 
     my ($url_fragment, $method, $payload, $headers, $query_params) = (
-        _valid_regex($param{url_fragment}, 'url_fragment', '^buyers|checkoutSessions|chargePermissions|charges|deliveryTrackers|refunds$'), 
+        _valid_regex($param{url_fragment}, 'url_fragment', '^buyers|checkoutSessions|chargePermissions|charges|deliveryTrackers|refunds'), 
         _valid_regex($param{method}, 'method', "^$method_regex\$"), 
         _valid_hash($param{payload}, 'payload'), 
         _valid_hash($param{headers}, 'headers'), 
