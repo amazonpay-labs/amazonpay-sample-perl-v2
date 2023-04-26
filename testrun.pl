@@ -9,7 +9,7 @@ eval {
         region => 'jp',
         public_key_id => 'AFUXXXX',
         private_key => 'AmazonPay_AFUXXXX.pem',
-        sandbox => 'true'
+        sandbox => 1
     );
 
     generate_button_signature($client);

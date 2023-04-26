@@ -5,11 +5,7 @@ use HTTP::Request;
 use HTTP::Headers;
 use LWP::UserAgent;
 use URI::Split qw(uri_split);
-use JSON::PP;
 use Data::Dumper;
-
-$JSON::PP::true = 1;
-$JSON::PP::false = 0;
 
 my @METHOD_TYPES = ('GET','POST','PUT','PATCH','DELETE');
 
