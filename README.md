@@ -23,7 +23,6 @@ This sample code use the following modules.
 
 * LWP::UserAgent
 * URI::Split qw(uri_split)
-* JSON::PP
 * Digest::SHA qw(sha256_hex)
 * Crypt::PK::RSA
 * MIME::Base64 qw(encode_base64)
