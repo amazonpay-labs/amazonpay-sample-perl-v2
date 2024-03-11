@@ -1,0 +1,9 @@
+conf_bk.pl
+privateKey.pem
+
+# others
+*.swp
+!.gitkeep
+.DS_Store
+Thumbs.db
+

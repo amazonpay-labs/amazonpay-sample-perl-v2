@@ -18,7 +18,8 @@ sub new {
         region => _valid_regex($param{region}, 'region', '^jp|eu|na$'),
         public_key_id => _valid_regex($param{public_key_id}, 'public_key_id', '^[\-0-9a-zA-Z]+$'),
         private_key_file => _valid_regex($param{private_key}, 'private_key', '\.pem$'),
-        environment => $param{sandbox} ? 'sandbox': 'live'
+        environment => $param{sandbox} ? 'sandbox': 'live',
+        amazon_signature_algorithm => $param{amazon_signature_algorithm} ? _valid_regex($param{amazon_signature_algorithm}, 'amazon_signature_algorithm', '^AMZN-PAY-RSASSA-PSS(-V2)?$'): 'AMZN-PAY-RSASSA-PSS'
     );
     return $self;
 }
@@ -89,8 +90,7 @@ use DateTime;
 
 use constant {
     API_VERSION => 'v2',
-    HASH_ALGORITHM => 'SHA256',
-    AMAZON_SIGNATURE_ALGORITHM => 'AMZN-PAY-RSASSA-PSS',
+    HASH_ALGORITHM => 'SHA256'
 };
 
 my %API_ENDPOINTS = (
@@ -108,7 +108,9 @@ sub new {
         region => $param{region},
         public_key_id => $param{public_key_id},
         private_key_file => $param{private_key_file},
-        environment => $param{environment}
+        environment => $param{environment},
+        amazon_signature_algorithm => $param{amazon_signature_algorithm},
+        salt_length => $param{amazon_signature_algorithm} eq "AMZN-PAY-RSASSA-PSS" ? 20 : 32
     }, $class;
     return $self;
 }
@@ -146,16 +148,16 @@ sub signed_headers {
     my $signature = $self->sign($canonical_request);
     my $signed_headers = "SignedHeaders=$canonical_header_names, Signature=$signature";
 
-    $headers->{'authorization'} = AMAZON_SIGNATURE_ALGORITHM . " PublicKeyId=$self->{public_key_id}, $signed_headers";
+    $headers->{'authorization'} = $self->{amazon_signature_algorithm} . " PublicKeyId=$self->{public_key_id}, $signed_headers";
     return $headers;
 }
 
 sub sign {
     my ($self, $string_to_sign) = @_;
     my $hexhash = Digest::SHA::sha256_hex($string_to_sign);
-    my $hashed_canonical_request = AMAZON_SIGNATURE_ALGORITHM . "\n$hexhash";
+    my $hashed_canonical_request = $self->{amazon_signature_algorithm} . "\n$hexhash";
     my $privateKey = Crypt::PK::RSA->new($self->{private_key_file});
-    my $signature = $privateKey->sign_message($hashed_canonical_request, HASH_ALGORITHM, 'pss', 20);
+    my $signature = $privateKey->sign_message($hashed_canonical_request, HASH_ALGORITHM, 'pss', $self->{salt_length});
     my $encoded = encode_base64($signature);
     $encoded =~ s/[\r\n]//g;
     return $encoded;

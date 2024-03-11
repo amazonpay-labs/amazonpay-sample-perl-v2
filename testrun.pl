@@ -9,10 +9,12 @@ eval {
         region => 'jp',
         public_key_id => 'AFUXXXX',
         private_key => 'AmazonPay_AFUXXXX.pem',
-        sandbox => 1
+        sandbox => 1,
+        amazon_signature_algorithm => 'AMZN-PAY-RSASSA-PSS-V2'
     );
 
     generate_button_signature($client);
+    #create_checkoutsession($client);
 };
 if($@) {
     print "Exception occurs: $@";
