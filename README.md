@@ -17,6 +17,8 @@ cd amazonpay-sample-perl-v2
 # ex.install Crypt for sign
 cpan Digest::SHA
 cpan Crypt::PK::RSA
+cpan Mozilla::CA
+cpan Bytes::Random::Secure
 ```
 
 This sample code use the following modules.
@@ -28,6 +30,8 @@ This sample code use the following modules.
 * MIME::Base64 qw(encode_base64)
 * URI::Escape
 * DateTime
+* Mozilla::CA
+* Bytes::Random::Secure
 
 
 # Functions
