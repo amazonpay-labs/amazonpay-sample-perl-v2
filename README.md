@@ -45,9 +45,16 @@ my $client = AmazonPayClient->new(
     region => 'jp', #us/eu/jp
     public_key_id => 'XXX',
     private_key => 'XXX.pem',
-    sandbox => 'true'
+    sandbox => 'true',
+    amazon_signature_algorithm => 'AMZN-PAY-RSASSA-PSS-V2'
 );
 ```
+
+> [!NOTE]
+'amazon_signature_algorithm' is optional, and it's defalut value is 'AMZN-PAY-RSASSA-PSS'.
+If you specify 'AMZN-PAY-RSASSA-PSS-V2' as 'amazon_signature_algorithm', you have to specify same algorithm on Amazon Pay's button script as well by following the page below:
+https://developer.amazon.com/docs/amazon-pay-checkout/amazon-pay-script.html
+
 
 ## GenerateButtonSignature
 
